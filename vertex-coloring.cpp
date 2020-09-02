@@ -1,13 +1,10 @@
 // Luby Jones algorithm
 
-#include <stdio.h>
-#include <stdlib.h> 
+#include <bits/stdc++.h>
 #include <mpi.h>
-#include <time.h> 
-#include <set>
 using namespace std;
 
-int main()
+int main(int argc, char *argv[])
 {
 	int rank, size;
 	
@@ -28,6 +25,7 @@ int main()
 		
 		cin >> N >> M;
 		
+		int u, v;
 		for (int i = 0; i < m; ++i)
 		{
 			cin >> u >> v;
