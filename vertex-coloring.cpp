@@ -59,22 +59,22 @@ int main(int argc, char *argv[])
 			weight[i] = rand();
 		}
 
+		// send number of vertices
+		MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		
+		// send randomly assigned weights
+		MPI_Bcast(&weight, N + 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+		// send graph
+		for (int i = 1; i <= N; ++i)
+		{
+			MPI_Bcast(&graph[i], N + 1, MPI_INT, 0, MPI_COMM_WORLD);
+		}
 		for (int i = 1; i < size; ++i)
 		{
 			cur_count = vertex_per_proc;
 			if(i == size - 1)cur_count = vertex_last_proc;
-			// send number of vertices
-			MPI_Send(&N, 1, MPI_INT, i, i, MPI_COMM_WORLD);
-
-			// send randomly assigned weights
-			MPI_Send(&weight, N + 1, MPI_INT, i, i, MPI_COMM_WORLD);
 			
-
-			// send graph
-			for(int j = 1; j <= N; ++j)
-			{
-				MPI_Send(&graph[j], N + 1, MPI_INT, i, i, MPI_COMM_WORLD);
-			}
 			int data[3] = {l, l + cur_count - 1, max_col};
 			// send range of vertices and max allowed color
 			MPI_Send(&data, 3, MPI_INT, i, i, MPI_COMM_WORLD);
@@ -92,8 +92,13 @@ int main(int argc, char *argv[])
 		for (int i = 1; i <= N; ++i)
 		{
 			max_col = max(max_col, color[i]);
+			for (int j = 1; j <= N; ++j)
+			{
+				if(graph[i][j])assert(color[i] != color[j]);
+			}
 		}
 
+		assert(max_col <= max_deg + 1);
 		cout << max_col << "\n";
 		for (int i = 1; i <= N; ++i)
 		{
@@ -104,16 +109,15 @@ int main(int argc, char *argv[])
 	else
 	{
 		// receive number of vertices
-		MPI_Recv(&N, 1, MPI_INT, 0, rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 		// receive randomly assigned weights
-		MPI_Recv(&weight, N + 1, MPI_INT, 0, rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Bcast(&weight, N + 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 		// receive graph
-		for(int i = 1; i <= N; ++i)
+		for (int i = 1; i <= N; ++i)
 		{
-			MPI_Recv(&graph[i], N + 1, MPI_INT, 0, rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			
+			MPI_Bcast(&graph[i], N + 1, MPI_INT, 0, MPI_COMM_WORLD);
 		}
 
 		int data[3];
