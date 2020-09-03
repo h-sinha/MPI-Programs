@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
 	int graph[101][101];
 	int color[101];
 	int weight[101];
+	int data[3];
 	int N, M;
 
 	memset(graph, 0, sizeof(graph));
@@ -47,9 +48,8 @@ int main(int argc, char *argv[])
 		}
 
 		int max_col = max_deg + 1;
-		int vertex_per_proc = N / (size - 1);
-		int vertex_last_proc = N % (size - 1) + N / (size - 1);
-		int l = 1;
+		int vertex_per_proc = N / size;
+		int vertex_last_proc = N % size + N / size;
 		// random seed
 		srand(time(0)); 
 		
@@ -70,43 +70,26 @@ int main(int argc, char *argv[])
 		{
 			MPI_Bcast(&graph[i], N + 1, MPI_INT, 0, MPI_COMM_WORLD);
 		}
+		int l = 1 + vertex_per_proc;
 		for (int i = 1; i < size; ++i)
 		{
 			cur_count = vertex_per_proc;
 			if(i == size - 1)cur_count = vertex_last_proc;
 			
-			int data[3] = {l, l + cur_count - 1, max_col};
+			data[0] = l;
+			data[1] = l + cur_count - 1;
+			data[2] = max_col;
 			// send range of vertices and max allowed color
 			MPI_Send(&data, 3, MPI_INT, i, i, MPI_COMM_WORLD);
 
 			l += cur_count;
 		}
-
-		// receive color from all processes
-		for(int i = 1; i < size; i++)
-		{
-			MPI_Recv(&color, N + 1, MPI_INT, i, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		}
-
-		max_col = 0;
-		for (int i = 1; i <= N; ++i)
-		{
-			max_col = max(max_col, color[i]);
-			for (int j = 1; j <= N; ++j)
-			{
-				if(graph[i][j])assert(color[i] != color[j]);
-			}
-		}
-
-		assert(max_col <= max_deg + 1);
-		cout << max_col << "\n";
-		for (int i = 1; i <= N; ++i)
-		{
-			cout << color[i] << " ";
-		}
-		cout << "\n";
+		// for process 0
+		data[0] = 1;
+		data[1] = 1 + vertex_per_proc - 1;
+		data[2] = max_col;
 	}
-	else
+	if(rank)
 	{
 		// receive number of vertices
 		MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -120,75 +103,92 @@ int main(int argc, char *argv[])
 			MPI_Bcast(&graph[i], N + 1, MPI_INT, 0, MPI_COMM_WORLD);
 		}
 
-		int data[3];
-
 		// receive range of vertices and max allowed color
 		MPI_Recv(&data, 3, MPI_INT, 0, rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-		int assign = 0, it = 0;
-		while(it <= N)
+	}
+	int assign = 0, it = 0;
+	while(it <= N)
+	{
+		it++;
+		assign = 1;
+		for (int v = data[0]; v <= data[1]; ++v)
 		{
-			it++;
-			assign = 1;
-			for (int v = data[0]; v <= data[1]; ++v)
+			if(color[v] == -1)
 			{
-				if(color[v] == -1)
+				assign = 1;
+				for (int i = 1; i <= N; ++i)
 				{
-					assign = 1;
+					if(graph[v][i] && color[i] == -1 && weight[i] > weight[v])
+					{
+						assign = 0;
+						break;
+					}
+				}
+				if(assign)
+				{
+					set<int>forbidden;
 					for (int i = 1; i <= N; ++i)
 					{
-						if(graph[v][i] && color[i] == -1 && weight[i] > weight[v])
+						if(graph[v][i] && color[i] != -1)
 						{
-							assign = 0;
+							forbidden.insert(color[i]);
+						}
+					}
+					for (int i = 1; i <= data[2]; ++i)
+					{
+						if(forbidden.find(i) == forbidden.end())
+						{
+							color[v] = i;
 							break;
-						}
-					}
-					if(assign)
-					{
-						set<int>forbidden;
-						for (int i = 1; i <= N; ++i)
-						{
-							if(graph[v][i] && color[i] != -1)
-							{
-								forbidden.insert(color[i]);
-							}
-						}
-						for (int i = 1; i <= data[2]; ++i)
-						{
-							if(forbidden.find(i) == forbidden.end())
-							{
-								color[v] = i;
-								break;
-							}
-						}
-					}
-				}
-			}
-			for (int i = 1; i < size; ++i)
-			{
-				if(i != rank)
-				{
-					MPI_Send(&color, N + 1, MPI_INT, i, i, MPI_COMM_WORLD);
-				}
-			}
-			for (int i = 1; i < size; ++i)
-			{
-				if(i != rank)
-				{
-					int recv_col[101];
-					MPI_Recv(&recv_col, N + 1, MPI_INT, i, rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-					for (int j = 1; j <= N; ++j)
-					{
-						if(color[j] == -1 && recv_col[j] != -1)
-						{
-							color[j] = recv_col[j];
 						}
 					}
 				}
 			}
 		}
-		MPI_Send(color, N + 1, MPI_INT, 0, rank, MPI_COMM_WORLD);
+		for (int i = 0; i < size; ++i)
+			{
+			if(i != rank)
+			{
+				MPI_Send(&color, N + 1, MPI_INT, i, i, MPI_COMM_WORLD);
+			}
+		}
+		for (int i = 0; i < size; ++i)
+		{
+			if(i != rank)
+			{
+				int recv_col[101];
+				MPI_Recv(&recv_col, N + 1, MPI_INT, i, rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					for (int j = 1; j <= N; ++j)
+				{
+					if(color[j] == -1 && recv_col[j] != -1)
+					{
+						color[j] = recv_col[j];
+					}
+				}
+			}
+		}
+	}
+	if(rank)MPI_Send(color, N + 1, MPI_INT, 0, rank, MPI_COMM_WORLD);
+	else
+	{
+		// receive color from all processes
+		for(int i = 1; i < size; i++)
+		{
+			MPI_Recv(&color, N + 1, MPI_INT, i, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		}
+
+		int max_col = 0;
+		for (int i = 1; i <= N; ++i)
+		{
+			max_col = max(max_col, color[i]);
+		}
+
+		cout << max_col << "\n";
+		for (int i = 1; i <= N; ++i)
+		{
+			cout << color[i] << " ";
+		}
+		cout << "\n";
 	}
 	MPI_Finalize();
 	return 0;
