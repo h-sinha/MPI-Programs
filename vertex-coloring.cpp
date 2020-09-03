@@ -145,20 +145,16 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-		for (int i = 0; i < size; ++i)
-			{
-			if(i != rank)
-			{
-				MPI_Send(&color, N + 1, MPI_INT, i, i, MPI_COMM_WORLD);
-			}
-		}
+		
+		MPI_Bcast(&color, N + 1, MPI_INT, rank, MPI_COMM_WORLD);
+
 		for (int i = 0; i < size; ++i)
 		{
 			if(i != rank)
 			{
 				int recv_col[101];
-				MPI_Recv(&recv_col, N + 1, MPI_INT, i, rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-					for (int j = 1; j <= N; ++j)
+				MPI_Bcast(&recv_col, N + 1, MPI_INT, i, MPI_COMM_WORLD);
+				for (int j = 1; j <= N; ++j)
 				{
 					if(color[j] == -1 && recv_col[j] != -1)
 					{
@@ -181,6 +177,13 @@ int main(int argc, char *argv[])
 		for (int i = 1; i <= N; ++i)
 		{
 			max_col = max(max_col, color[i]);
+			for (int j = 1; j <= N; ++j)
+			{
+				if(graph[i][j])
+				{
+					assert(color[i] != color[j]);
+				}
+			}
 		}
 
 		cout << max_col << "\n";
