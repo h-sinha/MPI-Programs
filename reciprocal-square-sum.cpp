@@ -6,12 +6,12 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    int rank, num_process;
+    int rank, size;
 
     MPI_Status status;
 
     MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &num_process);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     int elements_per_process, start_element, end_element;
@@ -22,25 +22,44 @@ int main(int argc, char *argv[])
         cin >> N;
 
         int i;
-        elements_per_process = N / num_process;
+        if (N > size)
+            elements_per_process = N / size;
+        else
+            elements_per_process = 1;
 
-        if (num_process > 1)
+        if (size > 1)
         {
-            for (i = 1; i < num_process; i++)
+            if (N > size)
             {
-                start_element = i * elements_per_process + 1;
-                end_element = start_element + elements_per_process - 1;
-                if (end_element > N)
+                for (i = 1; i < size - 1; i++)
                 {
-                    end_element = N;
+                    start_element = i * elements_per_process + 1;
+                    end_element = start_element + elements_per_process - 1;
+
+                    MPI_Send(&start_element, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+                    MPI_Send(&end_element, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
                 }
+
+                start_element = (size - 1) * elements_per_process + 1;
+                end_element = N;
 
                 MPI_Send(&start_element, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
                 MPI_Send(&end_element, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
-
-                if (end_element == N)
+            }
+            else
+            {
+                for (int i = 1; i < N; i++)
                 {
-                    break;
+                    start_element = i + 1;
+                    end_element = i + 1;
+                    MPI_Send(&start_element, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+                    MPI_Send(&end_element, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+                }
+                for (int i = N; i < size; i++)
+                {
+                    start_element = end_element + 1;
+                    MPI_Send(&start_element, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+                    MPI_Send(&end_element, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
                 }
             }
         }
@@ -52,7 +71,7 @@ int main(int argc, char *argv[])
         }
 
         long double temp;
-        for (i = 1; i < num_process; i++)
+        for (i = 1; i < size; i++)
         {
             MPI_Recv(&temp, 1, MPI_LONG_DOUBLE, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
             sum += temp;
@@ -68,9 +87,13 @@ int main(int argc, char *argv[])
         MPI_Recv(&end_element, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
 
         long double partial_sum = 0;
-        for (long double i = start_element; i <= end_element; i++)
+
+        if (start_element <= end_element)
         {
-            partial_sum += 1 / (i * i);
+            for (long double i = start_element; i <= end_element; i++)
+            {
+                partial_sum += 1 / (i * i);
+            }
         }
 
         MPI_Send(&partial_sum, 1, MPI_LONG_DOUBLE, 0, 0, MPI_COMM_WORLD);
