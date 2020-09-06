@@ -4,6 +4,15 @@
 #include <mpi.h>
 using namespace std;
 
+long double sequential(int N)
+{
+    long double sum = 0;
+    for (long double i = 1; i <= N ; ++i)
+    {
+        sum += (1/(i*i));
+    }
+    return sum;
+}
 int main(int argc, char *argv[])
 {
     int rank, size;
@@ -76,6 +85,8 @@ int main(int argc, char *argv[])
             MPI_Recv(&temp, 1, MPI_LONG_DOUBLE, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
             sum += temp;
         }
+
+        // assert((sum - sequential(N))<=1e-10);
 
         cout << std::fixed;
         cout << std::setprecision(6);
