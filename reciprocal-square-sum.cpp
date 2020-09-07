@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
             sum += temp;
         }
 
-        // assert((sum - sequential(N))<=1e-10);
+        // assert(abs(sum - sequential(N))<=1e-10);
 
         cout << std::fixed;
         cout << std::setprecision(6);
