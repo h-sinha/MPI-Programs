@@ -14,7 +14,7 @@ fn_test_status()
 	esac
 }
 
-mpic++ ../1.cpp
+mpic++ ../reciprocal-square-sum.cpp
 for ((i=1;i<=10;i++)); do
 	mpirun  -np $i  ./a.out <<< 1 > out.teststdin 2>out.teststderr
     fn_test_status $?
@@ -27,7 +27,7 @@ for ((i=1;i<=10;i++)); do
 	mpirun  -np $i  ./a.out <<< 20 > out.teststdin 2>out.teststderr
     fn_test_status $?
 done
-mpic++ ../2.cpp
+mpic++ ../matrix-multiplication.cpp
 mpirun  -np 4  ./a.out < mat_test > out.teststdin 2>out.teststderr
 fn_test_status $?
 mpirun  -np 1  ./a.out < mat_test > out.teststdin 2>out.teststderr
@@ -44,7 +44,7 @@ mpirun  -np 9  ./a.out < mat_test2 > out.teststdin 2>out.teststderr
 for ((i=1;i<=20;i++)); do
 	g++ graph_gen.cpp
 	./a.out > gr
-	mpic++ ../3.cpp
+	mpic++ ../vertex-coloring.cpp
 	for ((j=1;j<=10;j++)); do
 		mpirun  -np $j  ./a.out < gr > out.teststdin 2>out.teststderr
 	    fn_test_status $?
