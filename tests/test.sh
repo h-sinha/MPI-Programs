@@ -22,9 +22,13 @@ for ((i=1;i<=10;i++)); do
     fn_test_status $?
 	mpirun  -np $i  ./a.out <<< 98 > out.teststdin 2>out.teststderr
     fn_test_status $?
-	mpirun  -np $i  ./a.out <<< 6 > out.teststdin 2>out.teststderr
+	mpirun  -np $i  ./a.out <<< 2000 > out.teststdin 2>out.teststderr
     fn_test_status $?
-	mpirun  -np $i  ./a.out <<< 20 > out.teststdin 2>out.teststderr
+	mpirun  -np $i  ./a.out <<< 9829 > out.teststdin 2>out.teststderr
+    fn_test_status $?
+	mpirun  -np $i  ./a.out <<< 532 > out.teststdin 2>out.teststderr
+    fn_test_status $?
+	mpirun  -np $i  ./a.out <<< 10000 > out.teststdin 2>out.teststderr
     fn_test_status $?
 done
 mpic++ ../matrix-multiplication.cpp
