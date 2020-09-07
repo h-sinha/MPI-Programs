@@ -72,7 +72,6 @@ int main(int argc, char *argv[])
     if(rank == 0)
     {
 	    cin >> N;
-
 	    a = allocate_matrix(N);
 	    b = allocate_matrix(N);
 	    c = allocate_matrix(N);
@@ -122,8 +121,8 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		MPI_Scatterv(NULL, NULL, NULL, subarray_type, &(ta[0][0]), (N * N) / (size), MPI_INT, 0, comm);
-		MPI_Scatterv(NULL, NULL, NULL, subarray_type, &(tb[0][0]), (N * N) / (size), MPI_INT, 0, comm);
+		MPI_Scatterv(NULL, send_counts, displ, subarray_type, &(ta[0][0]), (N * N) / (size), MPI_INT, 0, comm);
+		MPI_Scatterv(NULL, send_counts, displ, subarray_type, &(tb[0][0]), (N * N) / (size), MPI_INT, 0, comm);
 	}
 	
 	// determine proc coord in cartesian topology
@@ -143,20 +142,16 @@ int main(int argc, char *argv[])
 		MPI_Sendrecv_replace(&(tb[0][0]), Np * Np, MPI_INT, up, 1, down, 1, comm, MPI_STATUS_IGNORE);
 	}
 	
-	if(rank == 0)
-	{
- 		MPI_Gatherv(&(tc[0][0]), (N * N) / size, MPI_INT, &(c[0][0]), send_counts, displ, subarray_type, 0, comm);
-   	}
-   	else
-   	{
- 		MPI_Gatherv(&(tc[0][0]), (N * N) / size, MPI_INT, NULL, NULL, NULL, subarray_type, 0, comm);
-   	}
+	if(rank == 0)MPI_Gatherv(&(tc[0][0]), (N * N) / size, MPI_INT, &(c[0][0]), send_counts, displ, subarray_type, 0, comm);
+   	else MPI_Gatherv(&(tc[0][0]), (N * N) / size, MPI_INT, NULL, NULL, NULL, subarray_type, 0, comm);
    	MPI_Barrier(MPI_COMM_WORLD);
+ 	
  	if(rank == 0)
   	{
   		test(a, b, c, N);
   		print_mat(c, N);
   	}
+    
     MPI_Finalize();
     return 0;
 }

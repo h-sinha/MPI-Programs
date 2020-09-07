@@ -48,6 +48,7 @@ int main(int argc, char *argv[])
 		}
 
 		int max_col = max_deg + 1;
+		cout << max_col << endl;
 		int vertex_per_proc = N / size;
 		int vertex_last_proc = N % size + N / size;
 		// random seed
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
 		MPI_Recv(&data, 3, MPI_INT, 0, rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
 	int assign = 0, it = 0;
-	while(it <= N)
+	while(it <= 2*N)
 	{
 		it++;
 		assign = 1;
@@ -181,6 +182,7 @@ int main(int argc, char *argv[])
 			{
 				if(graph[i][j])
 				{
+					// cout << i <<" "<<j <<" "<<color[i]<<" "<<color[j]<<endl;
 					assert(color[i] != color[j]);
 				}
 			}
