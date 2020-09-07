@@ -48,7 +48,6 @@ int main(int argc, char *argv[])
 		}
 
 		int max_col = max_deg + 1;
-		cout << max_col << endl;
 		int vertex_per_proc = N / size;
 		int vertex_last_proc = N % size + N / size;
 		// random seed
