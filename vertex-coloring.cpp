@@ -164,15 +164,8 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	if(rank)MPI_Send(color, N + 1, MPI_INT, 0, rank, MPI_COMM_WORLD);
-	else
+	if(!rank)
 	{
-		// receive color from all processes
-		for(int i = 1; i < size; i++)
-		{
-			MPI_Recv(&color, N + 1, MPI_INT, i, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		}
-
 		int max_col = 0;
 		for (int i = 1; i <= N; ++i)
 		{
